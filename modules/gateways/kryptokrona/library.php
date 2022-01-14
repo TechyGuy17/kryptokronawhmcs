@@ -7,10 +7,10 @@
  *
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
- * Modified to work with monero-rpc wallet by Serhack and cryptochangements
+ * Modified to work with kryptokrona-rpc wallet by Serhack and cryptochangements
  */
  
-class Monero_rpc
+class Kryptokrona_rpc
 {
     protected $url = null, $is_debug = false, $parameters_structure = 'array';
 
@@ -35,7 +35,7 @@ class Monero_rpc
    
     public function __construct($pUrl, $pUser = null, $pPass = null) {
 
-		$gatewayx = getGatewayVariables("monero");
+		$gatewayx = getGatewayVariables("kryptokrona");
         $this->validate(false === extension_loaded('curl'), 'The curl extension must be loaded for using this class!');
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded for using this class!');
 		$this->url = "http://" .$gatewayx['daemon_host']. ":" .$gatewayx['daemon_port'] . "/json_rpc";
@@ -111,7 +111,7 @@ class Monero_rpc
             $errorMessage = 'Request have return error: ' . $responseDecoded['error']['message'] . '; ' . "\n" .
                 'Request: ' . $request . '; ';
                 if ($responseDecoded['error']['message'] == "Method not found") {
-                	$errorMessage .= " Check the daemon hostname and daemon port settings in the Monero Pyament Gateway WHMCS config.";
+                	$errorMessage .= " Check the daemon hostname and daemon port settings in the kryptokrona Pyament Gateway WHMCS config.";
                 }
             if (isset($responseDecoded['error']['data']))
             {
@@ -240,77 +240,77 @@ class Monero_rpc
     }
     
     /* 
-     * The following functions can all be called to interact with the Monero RPC wallet
+     * The following functions can all be called to interact with the kryptokrona RPC wallet
      * They will majority of them will return the result as an array
      * Example: $daemon->address(); where $daemon is an instance of this class, will return the wallet address as string within an array
      */
     
     public function address()
     {
-        $address = $this->_run('getaddress');
+        $address = $this->_run('addresses/primary');
         return $address;
     }
     
     public function getbalance()
     {
-         $balance = $this->_run('getbalance');
+         $balance = $this->_run('balance');
          return $balance;
     }
     
     public function getheight()
     {
-         $height = $this->_run('getheight');
+         $height = $this->_run('status');
          return $height;
     }
     
     public function incoming_transfer($type)
     {
         $incoming_parameters = array('transfer_type' => $type);
-        $incoming_transfers = $this->_run('incoming_transfers', $incoming_parameters);
+        $incoming_transfers = $this->_run('/transactions/unconfirmed', $incoming_parameters);
         return $incoming_transfers;
     }
     
 	public function get_transfers($input_type, $input_value)
 	{
         $get_parameters = array($input_type => $input_value);
-        $get_transfers = $this->_run('get_transfers', $get_parameters);
+        $get_transfers = $this->_run('transactions', $get_parameters);
         return $get_transfers;
     }
     
     public function view_key()
     {
         $query_key = array('key_type' => 'view_key');
-        $query_key_method = $this->_run('query_key', $query_key);
+        $query_key_method = $this->_run('key', $query_key);
         return $query_key_method;
      }
      
      /* A payment id can be passed as a string
         A random payment id will be generated if one is not given */
-    public function make_integrated_address($payment_id)
+    public function make_integrated_address($paymentID)
     {
-        $integrate_address_parameters = array('payment_id' => $payment_id);
-        $integrate_address_method = $this->_run('make_integrated_address', $integrate_address_parameters);
+        $integrate_address_parameters = array('address' => $address, 'paymentID' => $paymentID), ;
+        $integrate_address_method = $this->_run('/addresses/{address}/{paymentID}', $integrate_address_parameters);
         return $integrate_address_method;
     }
     
-    public function split_integrated_address($integrated_address)
-    {
-        if(!isset($integrated_address)){
-            echo "Error: Integrated_Address mustn't be null";
-        }
-        else{
-			$split_params = array('integrated_address' => $integrated_address);
-			$split_methods = $this->_run('split_integrated_address', $split_params);
-			return $split_methods;
-        }
-    }
+    // public function split_integrated_address($integrated_address)
+    // {
+    //     if(!isset($integrated_address)){
+    //         echo "Error: Integrated_Address mustn't be null";
+    //     }
+    //     else{
+	// 		$split_params = array('integrated_address' => $integrated_address);
+	// 		$split_methods = $this->_run('split_integrated_address', $split_params);
+	// 		return $split_methods;
+    //     }
+    // }
     
-    public function make_uri($address, $amount_xmr, $recipient_name = null, $description = null)
+    public function make_uri($address, $amount_xkr, $recipient_name = null, $description = null)
     {
-        // If I pass 1, it will be 0.0000001 xmr. Then 
-        $new_amount = $amount_xmr * 100000000;
+        // If I pass 1, it will be 0.00001 xkr. Then 
+        $new_amount = $amount_xkr * 100000;
        
-        $uri_params = array('address' => $address, 'amount' => $new_amount, 'payment_id' => '', 'recipient_name' => $recipient_name, 'tx_description' => $description);
+        $uri_params = array('address' => $address, 'amount' => $new_amount, 'paymentID' => '', 'recipient_name' => $recipient_name, 'tx_description' => $description);
         $uri = $this->_run('make_uri', $uri_params);
         return $uri;
     }
@@ -322,26 +322,26 @@ class Monero_rpc
         return $parsed_uri;
     }
     
-    public function transfer($amount_xmr, $address, $mixin = 4)
+    public function transfer($amount_xkr, $address, $mixin = 4)
     {
-        $new_amount = $amount_xmr  * 1000000000000;
+        $new_amount = $amount_xkr  * 100000;
         $destinations = array('amount' => $new_amount, 'address' => $address);
-        $transfer_parameters = array('destinations' => array($destinations), 'mixin' => $mixin, 'get_tx_key' => true, 'unlock_time' => 0, 'payment_id' => '');
+        $transfer_parameters = array('destinations' => array($destinations), 'mixin' => $mixin, 'unlockTime' => 0, 'paymentID' => '');
         $transfer_method = $this->_run('transfer', $transfer_parameters);
         return $transfer_method;
     }
     
-    public function get_payments($payment_id)
+    public function get_payments($paymentID)
     {
-		$get_payments_parameters = array('payment_id' => $payment_id);
-		$get_payments = $this->_run('get_payments', $get_payments_parameters);
+		$get_payments_parameters = array('paymentID' => $paymentID);
+		$get_payments = $this->_run('transactions', $get_payments_parameters);
 		return $get_payments;
 	}
 	
-	public function get_bulk_payments($payment_id, $min_block_height)
-	{
-      $get_bulk_payments_parameters = array('payment_id' => $payment_id, 'min_block_height' => $min_block_height);
-      $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
-      return $get_bulk_payments;
-	}
+	// public function get_bulk_payments($paymentID, $min_block_height)
+	// {
+    //   $get_bulk_payments_parameters = array('paymentID' => $paymentID, 'min_block_height' => $min_block_height);
+    //   $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
+    //   return $get_bulk_payments;
+	// }
 } 
