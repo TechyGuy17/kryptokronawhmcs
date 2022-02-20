@@ -1,10 +1,13 @@
 <?php
 
-include("../../../init.php"); 
-include("../../../includes/functions.php");
-include("../../../includes/gatewayfunctions.php");
-include("../../../includes/invoicefunctions.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/init.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/functions.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/gatewayfunctions.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/invoicefunctions.php");
 
+function exceptions_error_handler($severity, $message, $filename, $lineno) {
+    throw new ErrorException($message, 0, $severity, $filename, $lineno);
+}
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 $fee = "0.0";
@@ -26,10 +29,11 @@ $link = $GATEWAY['daemon_host'].":".$GATEWAY['daemon_port']."/json_rpc";
 
 require_once('library.php');
 
-
 function verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency){
 	global $currency_symbol;
+	echo 'Soon connected!';
 	$kryptokrona_daemon = new Kryptokrona_rpc($link);
+	echo 'Connected!';
 	$check_mempool = true;
 	//Checks invoice ID is a valid invoice number 
 	$invoice_id = checkCbInvoiceID($invoice_id, $gatewaymodule);
@@ -69,7 +73,7 @@ function verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $st
 		return "Error: No payment ID.";
 	}
 	return $message;
-}
+} 
 
 function handle_whmcs($invoice_id, $amount_xkr, $txn_amt, $txn_txid, $txn_paymentID, $paymentID, $currency, $gatewaymodule) {
 	$amount_atomic_units = $amount_xkr * 100000;
@@ -92,7 +96,6 @@ function handle_whmcs($invoice_id, $amount_xkr, $txn_amt, $txn_txid, $txn_paymen
 		}
 	}
 }
-
 
 function add_payment($command, $invoice_id, $txn_txid, $gatewaymodule, $fiat_paid, $amount_xkr, $paymentID, $fee) {
 	$postData = array(
@@ -123,5 +126,7 @@ function stop_payment($paymentID, $amount, $invoice_id, $fee, $link){
 	}
 } */
 
-$vefiry = verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency);
-echo $vefiry;
+//$verify = verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency);
+echo $verify;
+set_error_handler('exceptions_error_handler');
+?>

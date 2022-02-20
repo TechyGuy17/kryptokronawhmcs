@@ -1,11 +1,13 @@
 <?php
-include("../../../init.php"); 
-include("../../../includes/functions.php");
-include("../../../includes/gatewayfunctions.php");
-include("../../../includes/invoicefunctions.php");
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+
+include ($_SERVER["DOCUMENT_ROOT"] . "/init.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/functions.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/gatewayfunctions.php");
+include ($_SERVER["DOCUMENT_ROOT"] . "/includes/invoicefunctions.php");
+//include("$rootDir/../init.php"); 
+//include("$rootDir/../includes/functions.php");
+//include("$rootDir/../includes/gatewayfunctions.php");
+//include("$rootDir/../includes/invoicefunctions.php");
 
 
 $gatewaymodule = "kryptokrona";
@@ -18,7 +20,7 @@ $link = $GATEWAY['daemon_host'].":".$GATEWAY['daemon_port']."/json_rpc";
 
 function kryptokrona_paymentID(){
     if(!isset($_COOKIE['paymentID'])) { 
-		$paymentID  = bin2hex(openssl_random_pseudo_bytes(8));
+		$paymentID  = bin2hex(openssl_random_pseudo_bytes(33));
 		setcookie('paymentID', $paymentID, time()+2700);
 	} else {
 		$paymentID = $_COOKIE['paymentID'];
@@ -36,16 +38,17 @@ $amount_xkr = stripslashes($_POST['amount_xkr']);
 $amount = stripslashes($_POST['amount']);
 $paymentID = kryptokrona_paymentID();
 $invoice_id = stripslashes($_POST['invoice_id']);
-$array_integrated_address = $kryptokrona_daemon->make_integrated_address($paymentID);
-$address = $array_integrated_address['integrated_address'];
-$uri  =  "xkr:$address?amount=$amount_xkr";
+$array_integrated_address = $kryptokrona_daemon->addresses;
+$address = $kryptokrona_daemon->addresses;
+$uri  =  "xkr://$address?amount=$amount_xkr?paymentID=$paymentID";
+echo $address;
 
 $secretKey = $GATEWAY['secretkey'];
 $hash = md5($invoice_id . $paymentID . $amount_xkr . $secretKey);
-echo "<link href='/modules/gateways/kryptokrona/style.css' rel='stylesheet'>";
+echo "<link href='/kryptokrona/style.css' rel='stylesheet'>";
 echo  "<script src='https://code.jquery.com/jquery-3.2.1.min.js'></script>";
-echo  "<script src='/modules/gateways/kryptokrona/spin.js'></script>";
-
+echo  "<script src='/kryptokrona/spin.js'></script>";
+//echo $address;
 
 echo "<title>Invoice</title>";
 echo "<head>
@@ -58,7 +61,7 @@ echo "<head>
             <body>
             <!-- page container  -->
             <div class='page-container'>
-                <img src='/modules/gateways/kryptokrona/kryptokrona.png' width='200' />
+                <img src='/kryptokrona/kryptokrona.png' width='200' />
 
         <div class='progress' id='progress'></div>
 
@@ -97,11 +100,11 @@ echo "<head>
             <div class='content-xmr-payment'>
             <div class='xmr-amount-send'>
             <span class='xmr-label'>Send:</span>
-            <div class='xmr-amount-box'>".$amount_xkr." XKR ($" . $amount . " " . $currency .") </div><div class='xmr-box'>XMR</div>
+            <div class='xmr-amount-box'>".$amount_xkr." XKR ($" . $amount . " " . $currency .") </div><div class='xmr-box'>XKR</div>
             </div>
             <div class='xmr-address'>
             <span class='xmr-label'>To this address:</span>
-            <div class='xmr-address-box'>". $array_integrated_address['integrated_address']."</div>
+            <div class='xmr-address-box'>". $address."</div>
             </div>
             <div class='xmr-qr-code'>
             <span class='xmr-label'>Or scan QR:</span>
@@ -126,7 +129,7 @@ echo "<script> function verify(){
 
 $.ajax({ url : 'verify.php',
 	type : 'POST',
-	data: { 'amount_xmr' : '".$amount_xkr."', 'paymentID' : '".$paymentID."', 'invoice_id' : '".$invoice_id."', 'amount' : '".$amount."', 'hash' : '".$hash."', 'currency' : '".$currency."'}, 
+	data: { 'amount_xkr' : '".$amount_xkr."', 'paymentID' : '".$paymentID."', 'invoice_id' : '".$invoice_id."', 'amount' : '".$amount."', 'hash' : '".$hash."', 'currency' : '".$currency."'}, 
 	success: function(msg) {
 		console.log(msg);
 		$('#message').text(msg);

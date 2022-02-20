@@ -7,9 +7,9 @@
  *
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
- * Modified to work with kryptokrona-rpc wallet by Serhack and cryptochangements
+ * Modified to work with kryptokrona-rpc wallet by TechyGuY
  */
- 
+
 class Kryptokrona_rpc
 {
     protected $url = null, $is_debug = false, $parameters_structure = 'array';
@@ -33,13 +33,13 @@ class Kryptokrona_rpc
         503 => '503 Service Unavailable'
     );
    
-    public function __construct($pUrl, $pUser = null, $pPass = null) {
+    public function __construct($pUrl, $pPass = null) {
 
 		$gatewayx = getGatewayVariables("kryptokrona");
         $this->validate(false === extension_loaded('curl'), 'The curl extension must be loaded for using this class!');
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded for using this class!');
 		$this->url = "http://" .$gatewayx['daemon_host']. ":" .$gatewayx['daemon_port'] . "/json_rpc";
-		$this->username = $gatewayx['daemon_user'];
+//		$this->username = $gatewayx['daemon_user'];
 		$this->password = $gatewayx['daemon_pass'];
 	}
    
@@ -91,11 +91,14 @@ class Kryptokrona_rpc
         // send params as an object or an array
         //$pParams = ($this->parameters_structure == 'object') ? $pParams[0] : array_values($pParams);
         // Request (method invocation)
-        $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId));
+        $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId, 'password' => $password));
+	echo $request;
+	echo 'This works';
         // if is_debug mode is true then add url and request to is_debug
         $this->debug('Url: ' . $this->url . "\r\n", true);
         $this->debug('Request: ' . $request . "\r\n", false);
         $responseMessage = $this->getResponse($request);
+	echo $responseMessage;
         // if is_debug mode is true then add response to is_debug and display it
         $this->debug('Response: ' . $responseMessage . "\r\n", true);
         // decode and create array ( can be object, just set to false )
@@ -124,6 +127,7 @@ class Kryptokrona_rpc
     protected function & getResponse(&$pRequest)
     {
         // do the actual connection
+	echo 'I do stuff!';
         $ch = curl_init();
         if ( !$ch)
         {
@@ -132,7 +136,6 @@ class Kryptokrona_rpc
         
         curl_setopt($ch, CURLOPT_URL, $this->url);
 		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-		curl_setopt($ch, CURLOPT_USERPWD, $this->username . ":" . $this->password);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $pRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -247,40 +250,42 @@ class Kryptokrona_rpc
     
     public function address()
     {
-        $address = $this->_run('addresses/primary');
+        $address = $this->_run('getAdresses');
         return $address;
+	echo $address;
     }
     
     public function getbalance()
     {
-         $balance = $this->_run('balance');
+         $balance = $this->_run('getBalance');
          return $balance;
     }
     
     public function getheight()
     {
-         $height = $this->_run('status');
+         $height = $this->_run('getStatus');
          return $height;
     }
     
     public function incoming_transfer($type)
     {
         $incoming_parameters = array('transfer_type' => $type);
-        $incoming_transfers = $this->_run('/transactions/unconfirmed', $incoming_parameters);
+        $incoming_transfers = $this->_run('getUnconfirmedTransactionHashes');
         return $incoming_transfers;
+//	echo $incoming_transfers;
     }
     
 	public function get_transfers($input_type, $input_value)
 	{
         $get_parameters = array($input_type => $input_value);
-        $get_transfers = $this->_run('transactions', $get_parameters);
+        $get_transfers = $this->_run('getTransactions', $get_parameters);
         return $get_transfers;
     }
     
     public function view_key()
     {
         $query_key = array('key_type' => 'view_key');
-        $query_key_method = $this->_run('key', $query_key);
+        $query_key_method = $this->_run('getViewKey', $query_key);
         return $query_key_method;
      }
      
@@ -288,8 +293,8 @@ class Kryptokrona_rpc
         A random payment id will be generated if one is not given */
     public function make_integrated_address($paymentID)
     {
-        $integrate_address_parameters = array('address' => $address, 'paymentID' => $paymentID), ;
-        $integrate_address_method = $this->_run('/addresses/{address}/{paymentID}', $integrate_address_parameters);
+        $integrate_address_parameters = array('address' => $address, 'paymentID' => $paymentID);
+        $integrate_address_method = $this->_run('createIntegratedAddress({adress},{paymentID}})', $integrate_address_parameters);
         return $integrate_address_method;
     }
     
@@ -322,7 +327,7 @@ class Kryptokrona_rpc
         return $parsed_uri;
     }
     
-    public function transfer($amount_xkr, $address, $mixin = 4)
+    public function transfer($amount_xkr, $address, $mixin = 3)
     {
         $new_amount = $amount_xkr  * 100000;
         $destinations = array('amount' => $new_amount, 'address' => $address);

@@ -29,16 +29,16 @@ function kryptokrona_Config(){
 
 /*
 *  
-*  Get the current XMR price in several currencies
+*  Get the current XKR price in several currencies
 *  
 *  @param String $currencies  List of currency codes separated by comma
 *  
 *  @return String  A json string in the format {"CURRENCY_CODE":PRICE}
 *  
 */
-function kryptokrona_retrivePriceList($currencies = 'BTC,USD,EUR,CAD,INR,GBP,BRL') {
+function kryptokrona_retrivePriceList($currencies = 'USD') {
 	
-	$source = 'https://api.coingecko.com/api/v3/simple/price?ids=kryptokrona&vs_currencies=$currencies';
+	$source = 'https://api.coinpaprika.com/v1/tickers/xkr-kryptokrona';
 	
 	if (ini_get('allow_url_fopen')) {
 		
@@ -64,70 +64,48 @@ function kryptokrona_retrivePriceList($currencies = 'BTC,USD,EUR,CAD,INR,GBP,BRL
 	$ch = curl_init();
 	curl_setopt_array($ch, $options);
 	
-	$xkr_price = curl_exec($ch);
+	$response = curl_exec($ch);
 	
 	curl_close($ch);
 	
-	if ($xkr_price === false) {
+	if ($response === false) {
 		
 		echo 'Error while retrieving XKR price list';
 		
 	}
 	
-	return $xkr_price;
+	return $response;
 	
 }
 
 function kryptokrona_retriveprice($currency) {
 	global $currency_symbol;
-	$xkr_price = kryptokrona_retrivePriceList('BTC,USD,EUR,CAD,INR,GBP,BRL');
-    $price = json_decode($xkr_price, TRUE);
-	if(!isset($price)){
-		echo "There was an error";
-	}
-	if ($currency == 'USD') {
-		$currency_symbol = "$";
-		return $price['USD'];
-	}
-	if ($currency == 'EUR') {
-		$currency_symbol = "€";
-		return $price['EUR'];
-	}
-	if ($currency == 'CAD'){
-		$currency_symbol = "$";
-		return $price['CAD'];
-	}
-	if ($currency == 'GBP'){
-		$currency_symbol = "£";
-		return $price['GBP'];
-	}
-	if ($currency == 'INR'){
-		$currency_symbol = "₹";
-		return $price['INR'];
-	}
-	if ($currency == 'BRL'){
-		$currency_symbol = "R$ ";
-		return $price['BRL'];
-	}
+	$response = kryptokrona_retrivePriceList('USD');
+    $responseBody = json_decode($response);
 	if($currency == 'XKR'){
-		$price = '1';
+		$currency_symbol = 'XKR';
+		$price = $responseBody->{'quotes'}->{'USD'}->{'price'};
+//		echo "The price is {$price}";
+		if(!isset($price)){
+			echo "There was an error";
+		}
 		return $price;
 	}
 }
 
-function kryptokrona_changeto($amount, $currency){
-    $xkr_live_price = kryptokrona_retriveprice($currency);
+function kryptokrona_changeto($amount){
+    $xkr_live_price = kryptokrona_retriveprice('XKR');
 	$live_for_storing = $xkr_live_price * 100; //This will remove the decimal so that it can easily be stored as an integer
 	$new_amount = $amount / $xkr_live_price;
-	$rounded_amount = round($new_amount, 12);
+	$rounded_amount = round($new_amount, 2);
     return $rounded_amount;
 }
 
-function xkr_to_fiat($amount, $currency){
-    $xkr_live_price = kryptokrona_retriveprice($currency);
+function xkr_to_fiat($amount){
+    $xkr_live_price = kryptokrona_retriveprice('XKR');
     $amount = $amount / 100000;
 	$new_amount = $amount * $xkr_live_price;
-	$rounded_amount = round($new_amount, 2);
+	$rounded_amount = round($new_amount, 0);
     return $rounded_amount;
 }
 
@@ -146,7 +124,7 @@ if(!$gateway["type"]) die("Module not activated");
 	$discount_setting = $gateway['discount_percentage'];
 	$discount_percentage = 100 - (preg_replace("/[^0-9]/", "", $discount_setting));
 	$amount = money_format('%i', $amount * ($discount_percentage / 100));
-	$currency = $params['currency'];
+	$currency = $params['USD'];
 	$firstname = $params['clientdetails']['firstname'];
 	$lastname = $params['clientdetails']['lastname'];
 	$email = $params['clientdetails']['email'];
@@ -173,15 +151,15 @@ if(!$gateway["type"]) die("Module not activated");
         'address'       => $address,
         'amount_xkr'    => $amount_xkr,
         'amount'        => $amount,
-        'currency'      => $currency     
+        'currency'      => 'USD'     
     );
-	$form = '<form action="' . $systemurl . '/modules/gateways/kryptokrona/createinvoice.php" method="POST">';
+	$form = '<form action="' . $systemurl . 'kryptokrona/createinvoice.php" method="POST">';
     foreach ($post as $key => $value) {
         $form .= '<input type="hidden" name="' . $key . '" value = "' . $value .'" />';
     }
     $form .= '<input type="submit" value="' . $params['langpaynow'] . '" />';
     $form .= '</form>';
-	$form .= '<p>'.$amount_xkr. " XKR (". $currency_symbol . $amount . " " . $currency .')</p>';
+	$form .= '<p>'.$amount_xkr. " XKR (". 'USD' . $amount . " " . $currency .')</p>';
 	if ($discount_setting > 0) {
 		$form .='<p><small>Discount Applied: ' . preg_replace("/[^0-9]/", "", $discount_setting) . '% </small></p>';
 	}
