@@ -126,7 +126,7 @@ function stop_payment($paymentID, $amount, $invoice_id, $fee, $link){
 	}
 } */
 
-//$verify = verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency);
+$verify = verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency);
 echo $verify;
 set_error_handler('exceptions_error_handler');
 ?>
