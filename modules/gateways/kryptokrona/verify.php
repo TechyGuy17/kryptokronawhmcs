@@ -31,9 +31,9 @@ require_once('library.php');
 
 function verify_payment($paymentID, $amount, $amount_xkr, $invoice_id, $fee, $status, $gatewaymodule, $hash, $secretKey, $currency){
 	global $currency_symbol;
-	echo 'Soon connected!';
+//	echo 'Soon connected!';
 	$kryptokrona_daemon = new Kryptokrona_rpc($link);
-	echo 'Connected!';
+//	echo 'Connected!';
 	$check_mempool = true;
 	//Checks invoice ID is a valid invoice number 
 	$invoice_id = checkCbInvoiceID($invoice_id, $gatewaymodule);
