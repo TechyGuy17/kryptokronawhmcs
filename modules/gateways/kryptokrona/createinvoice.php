@@ -1,5 +1,5 @@
 <?php
-
+//try {
 include ($_SERVER["DOCUMENT_ROOT"] . "/init.php");
 include ($_SERVER["DOCUMENT_ROOT"] . "/includes/functions.php");
 include ($_SERVER["DOCUMENT_ROOT"] . "/includes/gatewayfunctions.php");
@@ -20,7 +20,7 @@ $link = $GATEWAY['daemon_host'].":".$GATEWAY['daemon_port']."/json_rpc";
 
 function kryptokrona_paymentID(){
     if(!isset($_COOKIE['paymentID'])) { 
-		$paymentID  = bin2hex(openssl_random_pseudo_bytes(33));
+		$paymentID = bin2hex(openssl_random_pseudo_bytes(32));
 		setcookie('paymentID', $paymentID, time()+2700);
 	} else {
 		$paymentID = $_COOKIE['paymentID'];
@@ -38,10 +38,10 @@ $amount_xkr = stripslashes($_POST['amount_xkr']);
 $amount = stripslashes($_POST['amount']);
 $paymentID = kryptokrona_paymentID();
 $invoice_id = stripslashes($_POST['invoice_id']);
-$array_integrated_address = $kryptokrona_daemon->addresses;
-$address = $kryptokrona_daemon->addresses;
-$uri  =  "xkr://$address?amount=$amount_xkr?paymentID=$paymentID";
-echo $address;
+$array_integrated_address = $kryptokrona_daemon->make_integrated_address($paymentID);
+$address = $array_integrated_address['integratedAddress'];
+$uri  =  "xkr://$address?amount=$amount_xkr?paymentid=$paymentID";
+//echo $uri;
 
 $secretKey = $GATEWAY['secretkey'];
 $hash = md5($invoice_id . $paymentID . $amount_xkr . $secretKey);
@@ -88,7 +88,7 @@ echo "<head>
 			</script>
 			
         <div id='container'></div>
-        	    <div class='alert alert-warning' id='message'>".$message."</div><br>
+<!--        	    <div class='alert alert-warning' id='message'>".$message."</div><br -->
           <!-- kryptokrona container payment box -->
             <div class='container-xmr-payment'>
             <!-- header -->
@@ -150,4 +150,8 @@ $.ajax({ url : 'verify.php',
 verify();
 setInterval(function(){ verify()}, 5000);
 </script>";
+// } catch (Exception $e) {
+//        echo 'Caught exception: ',  $e->getMessage(), "\n";
+//        }
+
 ?>

@@ -7,9 +7,11 @@
  *
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
- * Modified to work with kryptokrona-rpc wallet by TechyGuY
+ * Modified to work with kryptokrona-rpc wallet by TechyGuy
  */
 
+//require_once('verify.php');
+//try {
 class Kryptokrona_rpc
 {
     protected $url = null, $is_debug = false, $parameters_structure = 'array';
@@ -40,7 +42,7 @@ class Kryptokrona_rpc
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded for using this class!');
 		$this->url = "http://" .$gatewayx['daemon_host']. ":" .$gatewayx['daemon_port'] . "/json_rpc";
 //		$this->username = $gatewayx['daemon_user'];
-		$this->password = $gatewayx['daemon_pass'];
+//		$this->password = $gatewayx['daemon_pass'];
 	}
    
     private function getHttpErrorMessage($pErrorNumber)
@@ -54,7 +56,7 @@ class Kryptokrona_rpc
         return $this;
     }
    
-  /*  public function setParametersStructure($pParametersStructure)
+    public function setParametersStructure($pParametersStructure)
     {
         if (in_array($pParametersStructure, array('array', 'object')))
         {
@@ -65,7 +67,7 @@ class Kryptokrona_rpc
             throw new UnexpectedValueException('Invalid parameters structure type.');
         }
         return $this;
-    } */
+    } 
    
     public function setCurlOptions($pOptionsArray)
     {
@@ -79,9 +81,10 @@ class Kryptokrona_rpc
         }
         return $this;
     }
-    
+//try {    
    private function request($pMethod, $pParams)
     {
+	//try {
         static $requestId = 0;
         // generating uniuqe id per process
         $requestId++;
@@ -91,14 +94,13 @@ class Kryptokrona_rpc
         // send params as an object or an array
         //$pParams = ($this->parameters_structure == 'object') ? $pParams[0] : array_values($pParams);
         // Request (method invocation)
-        $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId, 'password' => $password));
-	echo $request;
-	echo 'This works';
+        $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId));
+//	echo $request;
         // if is_debug mode is true then add url and request to is_debug
         $this->debug('Url: ' . $this->url . "\r\n", true);
         $this->debug('Request: ' . $request . "\r\n", false);
         $responseMessage = $this->getResponse($request);
-	echo $responseMessage;
+//	echo $responseMessage;
         // if is_debug mode is true then add response to is_debug and display it
         $this->debug('Response: ' . $responseMessage . "\r\n", true);
         // decode and create array ( can be object, just set to false )
@@ -123,11 +125,18 @@ class Kryptokrona_rpc
             $this->validate( !is_null($responseDecoded['error']), $errorMessage);
         }
         return $responseDecoded['result'];
+	//}  catch (Exception $e) {
+        //echo 'Caught exception: ',  $e->getMessage(), "\n";
+        //}
+
     }
+   // } catch (Exception $e) {
+    //    echo 'Caught exception: ',  $e->getMessage(), "\n";
+  //      }
+
     protected function & getResponse(&$pRequest)
     {
         // do the actual connection
-	echo 'I do stuff!';
         $ch = curl_init();
         if ( !$ch)
         {
@@ -250,9 +259,10 @@ class Kryptokrona_rpc
     
     public function address()
     {
-        $address = $this->_run('getAdresses');
+//	echo 'Getting address';
+        $address =  'SEKReYdtyAbeKfwnYsTnfDVYmRi4NJMamPoiBpz92f57UZnp2ZcRDxeSCFJgjfvWtYfsjSfLi89beZK9zjrijicjVkqqCFc8kfR"';
         return $address;
-	echo $address;
+//	echo $address;
     }
     
     public function getbalance()
@@ -293,8 +303,9 @@ class Kryptokrona_rpc
         A random payment id will be generated if one is not given */
     public function make_integrated_address($paymentID)
     {
-        $integrate_address_parameters = array('address' => $address, 'paymentID' => $paymentID);
-        $integrate_address_method = $this->_run('createIntegratedAddress({adress},{paymentID}})', $integrate_address_parameters);
+	//$kryptokrona_rpc->address();
+        $integrate_address_parameters = array('address' => 'SEKReYdtyAbeKfwnYsTnfDVYmRi4NJMamPoiBpz92f57UZnp2ZcRDxeSCFJgjfvWtYfsjSfLi89beZK9zjrijicjVkqqCFc8kfR', 'paymentId' => $paymentID);
+        $integrate_address_method = $this->_run('createIntegratedAddress', $integrate_address_parameters);
         return $integrate_address_method;
     }
     
@@ -335,12 +346,14 @@ class Kryptokrona_rpc
         $transfer_method = $this->_run('transfer', $transfer_parameters);
         return $transfer_method;
     }
-    
+     
+
     public function get_payments($paymentID)
     {
-		$get_payments_parameters = array('paymentID' => $paymentID);
-		$get_payments = $this->_run('transactions', $get_payments_parameters);
+		$get_payments_parameters = array('blockCount' => 1000000, 'firstBlockIndex' => 900000);
+		$get_payments = $this->_run('getTransactionHashes', $get_payments_parameters);
 		return $get_payments;
+//		echo $get_payments;
 	}
 	
 	// public function get_bulk_payments($paymentID, $min_block_height)
@@ -349,4 +362,9 @@ class Kryptokrona_rpc
     //   $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
     //   return $get_bulk_payments;
 	// }
-} 
+}
+//     } catch (Exception $e) {
+//	echo 'Caught exception: ',  $e->getMessage(), "\n";
+//	}
+
+
